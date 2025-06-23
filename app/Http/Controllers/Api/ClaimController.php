@@ -63,7 +63,7 @@ class ClaimController extends Controller
             }
 
             //   Assign claim to batch
-            app(AssignClaimToBatch::class)->execute($claim);
+            app(AssignClaimToBatch::class)->handle($claim);
 
             DB::commit();
 

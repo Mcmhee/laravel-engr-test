@@ -28,6 +28,15 @@ class InsurerController extends Controller
         ]);
     }
 
+    public function claims($id)
+    {
+        $insurer = Insurer::findOrFail($id);
+        return $insurer->claims()
+            ->with(['provider', 'items'])
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
