@@ -8,27 +8,31 @@ use Illuminate\Support\Carbon;
 
 class CalculateClaimProcessingCost
 {
+    // This class figures out how much it costs to process a single claim
     public function handle(Claim $claim, Insurer $insurer): float
     {
-        $baseCost = 100.0; // Base processing cost
+        $baseCost = 100.0; // Start with a base processing cost
         
-        // Apply time of month multiplier
+        // Adjust the cost based on when in the month the claim was submitted
         $timeMultiplier = $this->calculateTimeOfMonthMultiplier($claim);
         
-        // Apply specialty efficiency multiplier
+        // Adjust the cost based on how efficient the specialty is for this insurer
         $specialtyMultiplier = $this->calculateSpecialtyMultiplier($claim, $insurer);
         
-        // Apply priority level multiplier
+        // Adjust the cost based on the claim's priority (urgent claims cost more)
         $priorityMultiplier = $this->calculatePriorityMultiplier($claim);
         
-        // Apply monetary value multiplier
+        // Adjust the cost based on how much money the claim is for
         $valueMultiplier = $this->calculateValueMultiplier($claim);
         
+        // Multiply all the factors together to get the total cost
         $totalCost = $baseCost * $timeMultiplier * $specialtyMultiplier * $priorityMultiplier * $valueMultiplier;
         
+        // Return the final cost, rounded to 2 decimal places
         return round($totalCost, 2);
     }
 
+    // Helper: Make claims more expensive if submitted later in the month
     private function calculateTimeOfMonthMultiplier(Claim $claim): float
     {
         $date = Carbon::parse($claim->submission_date);
@@ -39,6 +43,7 @@ class CalculateClaimProcessingCost
         return round($multiplier, 3);
     }
 
+    // Helper: Make claims cheaper if the insurer is efficient at this specialty
     private function calculateSpecialtyMultiplier(Claim $claim, Insurer $insurer): float
     {
         $specialtyPreferences = $insurer->specialty_preferences ?? [];
@@ -49,22 +54,25 @@ class CalculateClaimProcessingCost
             return 2.0 - $efficiency;
         }
         
+        // If we don't know, use a default multiplier
         return 1.25;
     }
 
+    // Helper: Higher priority claims cost more to process
     private function calculatePriorityMultiplier(Claim $claim): float
     {
         $priorityMultipliers = [
-            1 => 2.0,
+            1 => 2.0,   // Highest priority
             2 => 1.6,
             3 => 1.3,
             4 => 1.1,
-            5 => 1.0,
+            5 => 1.0,   // Lowest priority
         ];
         
         return $priorityMultipliers[$claim->priority_level] ?? 1.0;
     }
 
+    // Helper: Bigger claims (more money) cost more to process
     private function calculateValueMultiplier(Claim $claim): float
     {
         $value = $claim->total_amount;

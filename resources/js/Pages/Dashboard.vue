@@ -83,7 +83,11 @@ const triggerOptimization = async () => {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const result = await response.json();
     
-    alert(`Optimization completed! ${result.result.optimization_notes.join(', ')}`);
+    let notes = result.result.optimization_notes;
+    if (typeof notes === 'string') {
+      notes = [notes];
+    }
+    alert(`Optimization completed! ${notes.join(', ')}`);
     
     // Refresh data
     await fetchClaims(selectedInsurerId.value);

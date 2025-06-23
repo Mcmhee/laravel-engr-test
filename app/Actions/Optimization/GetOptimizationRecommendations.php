@@ -11,20 +11,25 @@ use Illuminate\Support\Collection;
 
 class GetOptimizationRecommendations
 {
+    // This class gives advice on how to optimize (improve) claim batching for an insurer
     private CalculateBatchProcessingCost $calculateBatchProcessingCost;
 
     public function __construct(CalculateBatchProcessingCost $calculateBatchProcessingCost)
     {
+        // We need a way to calculate the total cost of a batch of claims
         $this->calculateBatchProcessingCost = $calculateBatchProcessingCost;
     }
 
+    // Main function: Give recommendations for batching and cost-saving
     public function handle(Insurer $insurer): array
     {
+        // Get all claims for this insurer that haven't been batched yet
         $unbatchedClaims = Claim::where('insurer_id', $insurer->id)
             ->whereDoesntHave('batches')
             ->with(['provider', 'items'])
             ->get();
         
+        // If there are no unbatched claims, return zeros and empty suggestions
         if ($unbatchedClaims->isEmpty()) {
             return [
                 'total_unbatched_claims' => 0,
@@ -37,12 +42,13 @@ class GetOptimizationRecommendations
             ];
         }
         
+        // Calculate the total and average cost for all unbatched claims
         $totalCost = $this->calculateBatchProcessingCost->handle($unbatchedClaims->all(), $insurer);
         $avgCostPerClaim = $totalCost / $unbatchedClaims->count();
         
         $opportunities = [];
 
-        // 1. High-cost specialties
+        // 1. Check if any specialty is much more expensive than others
         $specialtyCosts = $unbatchedClaims->groupBy('specialty')->map(function ($claims) use ($insurer) {
             $cost = $this->calculateBatchProcessingCost->handle($claims->all(), $insurer);
             return $cost / $claims->count();
@@ -60,7 +66,7 @@ class GetOptimizationRecommendations
             }
         }
 
-        // 2. High-priority volume
+        // 2. Check if there are a lot of high-priority claims
         $highPriorityClaimsCount = $unbatchedClaims->where('priority_level', '<=', 2)->count();
         if ($unbatchedClaims->count() > 0 && ($highPriorityClaimsCount / $unbatchedClaims->count()) > 0.3) {
             $opportunities[] = [
@@ -71,6 +77,7 @@ class GetOptimizationRecommendations
             ];
         }
         
+        // Return the recommendations and analysis
         return [
             'total_unbatched_claims' => $unbatchedClaims->count(),
             'estimated_total_cost' => $totalCost,
@@ -82,6 +89,7 @@ class GetOptimizationRecommendations
         ];
     }
     
+    // Helper: Calculate how much of the insurer's daily capacity is used
     private function calculateCapacityUtilization(Insurer $insurer): float
     {
         $today = Carbon::today();

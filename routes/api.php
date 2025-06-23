@@ -6,11 +6,10 @@ use App\Http\Controllers\Api\ClaimController;
 use App\Http\Controllers\Api\InsurerController;
 use App\Http\Controllers\Api\OptimizationController;
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
 
 
+
+// Submit Claim
 Route::post('/claims', [ClaimController::class, 'submit']);
 
 // Get claims for a specific insurer

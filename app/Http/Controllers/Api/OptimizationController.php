@@ -45,9 +45,7 @@ class OptimizationController extends Controller
     public function getClaimCostBreakdown($id, CalculateClaimProcessingCost $calculateClaimProcessingCost)
     {
         $claim = Claim::with(['insurer', 'provider', 'items'])->findOrFail($id);
-        
-        // Note: The original service had a dedicated 'getClaimCostBreakdown' method.
-        // For this refactoring, we'll build the response here. A dedicated action could also be created.
+     
         $totalCost = $calculateClaimProcessingCost->handle($claim, $claim->insurer);
 
         return response()->json([
