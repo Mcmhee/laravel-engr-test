@@ -10,6 +10,13 @@ return new class extends Migration
     {
         Schema::create('claims', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('provider_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('insurer_id')->constrained()->cascadeOnDelete();
+            $table->date('encounter_date');
+            $table->date('submission_date');
+            $table->string('specialty');
+            $table->tinyInteger('priority_level');
+            $table->decimal('total_amount', 12, 2)->default(0);
             $table->timestamps();
         });
     }
